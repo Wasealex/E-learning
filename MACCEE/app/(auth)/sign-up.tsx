@@ -1,21 +1,79 @@
-import { Image, ScrollView, Text, View } from "react-native";
+import { Alert, Image, ScrollView, Text, View } from "react-native";
 import React, { useState } from "react";
 import TopBook from "../../assets/images/top-book.png";
 import InputField from "../../components/inputField";
 import person from "../../assets/icons/personIcon.png";
 import email from "../../assets/icons/emailIcon.png";
-import password from "../../assets/icons/passwordIcon.png";
+import passwordIcon from "../../assets/icons/passwordIcon.png";
+import checkIcon from "../../assets/icons/checkIcon.png";
+import lockIcon from "../../assets/icons/lockIcon.png";
 import CustomButton from "@/components/customButton";
-import { Link } from "expo-router";
+import OAuth from "../../components/oAuth";
+import { Link, router } from "expo-router";
+import { useSignUp } from "@clerk/clerk-expo";
+import ReactNativeModal from "react-native-modal";
 
 const SignUp = () => {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
-  const onSignupPress = () => {};
+  const [verification, setVerification] = useState({
+    state: "default",
+    error: "",
+    code: "",
+  });
+
+  const onSignUpPress = async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    try {
+      await signUp.create({
+        emailAddress: form.email,
+        password: form.password,
+      });
+
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+
+      setVerification({ ...verification, state: "pending" });
+    } catch (err: any) {
+      Alert.alert("Error", err.errors[0].longMessage);
+    }
+  };
+
+  const onPressVerify = async () => {
+    if (!isLoaded) {
+      return;
+    }
+
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: verification.code,
+      });
+
+      if (completeSignUp.status === "complete") {
+        // Set the user as active and create a database user
+        await setActive({ session: completeSignUp.createdSessionId });
+        setVerification({ ...verification, state: "success" });
+      } else {
+        setVerification({
+          ...verification,
+          error: "Verification failed.",
+          state: "failed",
+        });
+      }
+    } catch (err: any) {
+      setVerification({
+        ...verification,
+        error: err.errors[0].longMessage,
+        state: "failed",
+      });
+    }
+  };
   return (
     <ScrollView className="flex-1 #ebf5f5">
       <View className="flex-1">
@@ -51,26 +109,17 @@ const SignUp = () => {
             label={"Password"}
             placeholder={"Enter your Password"}
             value={form.password}
-            icon={password}
+            icon={passwordIcon}
             secureTextEntry={true}
             onChangeText={(value) => setForm({ ...form, password: value })}
-          />
-          <InputField
-            label={"Confirm Password"}
-            placeholder={"Re-enter your Password"}
-            value={form.confirmPassword}
-            secureTextEntry={true}
-            icon={password}
-            onChangeText={(value) =>
-              setForm({ ...form, confirmPassword: value })
-            }
           />
           <CustomButton
             title={"Sign Up"}
             className="mt-5"
-            onPress={onSignupPress}
+            onPress={onSignUpPress}
           />
-          {/* OAuth */}
+
+          <OAuth />
 
           <View className="flex flex-row items-center justify-center mt-3">
             <Text className="text-[#8d9191] font-Roboto">
@@ -80,7 +129,64 @@ const SignUp = () => {
               Log In
             </Link>
           </View>
-          {/* Verification modal*/}
+          <ReactNativeModal
+            isVisible={verification.state === "pending"}
+            onModalHide={() =>
+              setVerification({ ...verification, state: "success" })
+            }
+          >
+            <View className="bg-white px-5 py-10 rounded-2xl min-h-[200px]">
+              <Text className="text-3xl mb-5 font-Roboto font-bold">
+                Verification
+              </Text>
+              <Text className="text-[#8d9191] mb-5">
+                A verification code has been sent to {form.email}. Please enter
+                the code below
+              </Text>
+              <InputField
+                label={"Verification Code"}
+                placeholder={"Enter the code"}
+                icon={lockIcon}
+                value={verification.code}
+                keyboardType="numeric"
+                onChangeText={(code) =>
+                  setVerification({ ...verification, code: code })
+                }
+              />
+              {verification.error && (
+                <Text className="text-red-500 text-sm my-2">
+                  {verification.error}
+                </Text>
+              )}
+              <CustomButton
+                title={"Verify"}
+                className="mt-5"
+                onPress={onPressVerify}
+                bgVariant="success"
+              />
+            </View>
+          </ReactNativeModal>
+          <ReactNativeModal isVisible={verification.state === "success"}>
+            <View className="bg-white px-5 py-10 rounded-2xl min-h-[200px]">
+              <Image
+                source={checkIcon}
+                className="w-20 h-20 mx-auto bg-green-500 rounded-full p-6 my-5"
+              />
+              <Text className="text-2xl font-Roboto font-bold text-center">
+                Account Created
+              </Text>
+              <Text className="text-[#8d9191] text-center mt-2">
+                Your account has been created successfully
+              </Text>
+              <CustomButton
+                title={"browse home"}
+                className="mt-5"
+                onPress={() => {
+                  router.replace("/(root)/(tabs)/home");
+                }}
+              />
+            </View>
+          </ReactNativeModal>
         </View>
       </View>
     </ScrollView>

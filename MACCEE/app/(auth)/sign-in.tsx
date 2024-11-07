@@ -7,12 +7,14 @@ import email from "../../assets/icons/emailIcon.png";
 import password from "../../assets/icons/passwordIcon.png";
 import CustomButton from "@/components/customButton";
 import { Link } from "expo-router";
+import OAuth from "@/components/oAuth";
 
 const SignIn = () => {
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+  const onSignInPress = async () => {};
   return (
     <ScrollView className="flex-1 #ebf5f5">
       <View className="flex-1">
@@ -45,8 +47,13 @@ const SignIn = () => {
             secureTextEntry={true}
             onChangeText={(value) => setForm({ ...form, password: value })}
           />
-          <CustomButton title={"Sign in"} className="mt-5" />
-          <View className="flex flex-row items-center justify-center mt-3">
+          <CustomButton
+            title={"Sign in"}
+            className="mt-5"
+            onPress={onSignInPress}
+          />
+          <OAuth />
+          <View className="flex flex-row items-center justify-center mt-5">
             <Text className="text-[#8d9191] font-Roboto">
               Dont have an account?{" "}
             </Text>
