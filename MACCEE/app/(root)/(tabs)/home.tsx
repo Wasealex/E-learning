@@ -1,5 +1,5 @@
+/*************  ✨ Codeium Command 🌟  *************/
 import { SignedIn, SignedOut, useUser } from "@clerk/clerk-expo";
-import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -121,31 +121,36 @@ const recentRides = [
   },
 ];
 
-const handleSignOut = async () => {};
-
 export default function Page() {
   const { user } = useUser();
-
-  const [allRides, setAllRides] = useState(false);
-
+  const Loading = true;
+  const handleSignOut = () => {};
   return (
     <SafeAreaView className="bg-general-500">
       <FlatList
-        data={allRides ? recentRides : recentRides.slice(0, 1)}
+        data={recentRides}
         renderItem={({ item }) => <RideCard ride={item} />}
         className="px-5"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: 100 }}
         ListEmptyComponent={() => (
           <View className="flex flex-col items-center justify-center my-20 bg-general-500">
-            <Image source={noRides} className="w-[380px] h-[380px] my-25" />
-            <Text className="text-3xl font-Roboto text-gray-500">
-              No rides found
-            </Text>
-            <CustomButton
-              title={`${user ? "Start a new ride" : "Sign in to start a ride"}`}
-              className="my-12"
-            />
+            {!Loading ? (
+              <>
+                <Image source={noRides} className="w-[380px] h-[380px] my-25" />
+                <Text className="text-3xl font-Roboto text-gray-500">
+                  No rides found
+                </Text>
+                <CustomButton
+                  title={`${
+                    user ? "Start a new ride" : "Sign in to start a ride"
+                  }`}
+                  className="my-12"
+                />
+              </>
+            ) : (
+              <ActivityIndicator size="large" color="#000" />
+            )}
           </View>
         )}
         ListHeaderComponent={() => (
@@ -153,18 +158,10 @@ export default function Page() {
             <Text className="text-3xl font-Roboto text-gray-500">
               Recent rides
             </Text>
-            <TouchableOpacity onPress={() => setAllRides(!allRides)}>
-              <Text className="text-lg font-Roboto text-gray-500">
-                {allRides ? "Show less" : "View all"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex items-center justify-center w-10 h-10"
-              onPress={handleSignOut}
-            >
+            <TouchableOpacity onPress={handleSignOut}>
               <Image
                 source={signOutIcon}
-                className="rounded-full w-12 h-12 justify-center"
+                className="w-12 h-12 rounded-full items-end"
               />
             </TouchableOpacity>
           </View>
@@ -173,3 +170,5 @@ export default function Page() {
     </SafeAreaView>
   );
 }
+
+/******  dfb5b395-ba76-49b6-8295-ca260301330a  *******/
