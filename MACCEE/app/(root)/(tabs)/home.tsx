@@ -1,5 +1,5 @@
-/*************  ✨ Codeium Command 🌟  *************/
 import { SignedIn, SignedOut, useUser } from "@clerk/clerk-expo";
+import * as Location from "expo-location";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,11 @@ import RideCard from "@/components/rideCard";
 import noRides from "@/assets/images/noRides.png";
 import CustomButton from "@/components/customButton";
 import signOutIcon from "@/assets/icons/signOutIcon.png";
+import GoogleTextInput from "@/components/GoogleTextInput";
+import searchIcon from "@/assets/icons/searchIcon.png";
+import Map from "@/components/Map";
+import { useLocationStore } from "@/store";
+import { useState, useEffect } from "react";
 
 const recentRides = [
   {
@@ -122,9 +127,37 @@ const recentRides = [
 ];
 
 export default function Page() {
+  const { setUserLocation, setDestinationLocation } = useLocationStore();
   const { user } = useUser();
   const Loading = true;
+
+  const [hasPermission, setHasPermission] = useState(false);
+
   const handleSignOut = () => {};
+  const handleDestinationPress = () => {};
+
+  useEffect(() => {
+    const requestLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setHasPermission(false);
+        return;
+      } else {
+        let location = await Location.getCurrentPositionAsync({});
+        const address = await Location.reverseGeocodeAsync({
+          latitude: location.coords?.latitude!,
+          longitude: location.coords?.longitude!,
+        });
+        setUserLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          address: `${address[0].city}, ${address[0].region}`,
+        });
+      }
+    };
+    requestLocation();
+  }, []);
+
   return (
     <SafeAreaView className="bg-general-500">
       <FlatList
@@ -154,21 +187,35 @@ export default function Page() {
           </View>
         )}
         ListHeaderComponent={() => (
-          <View className="flex flex-row items-center justify-between p-5">
-            <Text className="text-3xl font-Roboto text-gray-500">
-              Recent rides
+          <>
+            <View className="flex flex-row items-center justify-between p-5">
+              <Text className="text-3xl font-Roboto text-bold">Welcome</Text>
+              <TouchableOpacity onPress={handleSignOut}>
+                <Image
+                  source={signOutIcon}
+                  className="w-12 h-12 rounded-full items-end"
+                />
+              </TouchableOpacity>
+            </View>
+            <GoogleTextInput
+              icon={searchIcon}
+              containerStyle="bg-white shadow-md shadow-neutral-300"
+              handlePress={handleDestinationPress}
+            />
+            <>
+              <Text className="text-xl font-Roboto text-gray-500 px-5">
+                you are here
+              </Text>
+              <View className="flex items-center bg-transparent flex-row h-[300px]">
+                <Map />
+              </View>
+            </>
+            <Text className="text-xl font-Roboto text-gray-500 px-5">
+              Recent Rides
             </Text>
-            <TouchableOpacity onPress={handleSignOut}>
-              <Image
-                source={signOutIcon}
-                className="w-12 h-12 rounded-full items-end"
-              />
-            </TouchableOpacity>
-          </View>
+          </>
         )}
       />
     </SafeAreaView>
   );
 }
-
-/******  dfb5b395-ba76-49b6-8295-ca260301330a  *******/
